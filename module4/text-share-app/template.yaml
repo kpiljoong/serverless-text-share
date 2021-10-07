@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: TextShare App
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    MemorySize: 128
+    Timeout: 30
+    
+Resources:
+  TextShareAppApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: TextShareApp Api
+      StageName: prod
+      
+  TextShareAppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      CodeUri: .
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TextShareTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TextShareTable
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TextShareAppApi
+            Path: /{proxy+}
+            Method: GET
+        PutApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TextShareAppApi
+            Path: /
+            Method: GET
+            
+  TextShareTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: pid
+        Type: String
+Outputs:
+  ApiGatewayEndpoint:
+    Description: 'API Gateway endpoint URL for Prod stage'
+    Value: !Sub 'https://${TextShareAppApi}.execute-api.${AWS::Region}.amazonaws.com/prod/'
