@@ -34,7 +34,7 @@ export class PipelineStack extends cdk.Stack {
             version: "0.2",
             phases: {
                 install: {
-                    'runtime-versions': { 'nodejs': '14' },
+                    'runtime-versions': { 'nodejs': '16' },
                     'commands': [ 'npm install' ]
                 },
                 build: {
@@ -67,7 +67,7 @@ export class PipelineStack extends cdk.Stack {
             version: "0.2",
             phases: {
                 install: {
-                    'runtime-versions': { 'nodejs': '14' }
+                    'runtime-versions': { 'nodejs': '16' }
                 },
                 build: {
                     commands: [ 'npm build' ]
