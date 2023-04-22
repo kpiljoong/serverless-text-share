@@ -1,28 +1,20 @@
-import * as cdk from '@aws-cdk/core';
+import * as cdk from 'aws-cdk-lib';
 
-import * as codecommit from '@aws-cdk/aws-codecommit';
-import * as codebuild from '@aws-cdk/aws-codebuild';
-import * as codepipeline from '@aws-cdk/aws-codepipeline';
-import * as codepipeline_actions from '@aws-cdk/aws-codepipeline-actions';
-
-import * as lambda from '@aws-cdk/aws-lambda';
-
-export interface PipelineStackProps extends cdk.StackProps {
-	readonly lambdaCode: lambda.CfnParametersCode;
-}
+import * as codecommit from 'aws-cdk-lib/aws-codecommit';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
+import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 
 export class PipelineStack extends cdk.Stack {
-	constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
-		super(scope, id, props);
-		
-        // 코드 리포지토리
-		const appRepo = new codecommit.Repository(this, 'AppRepo', {
+    constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+        super(scope, id, props);
+        
+        const appRepo = new codecommit.Repository(this, 'AppRepo', {
             repositoryName: 'TextShareRepo'
         });
         
+        // Source
         const sourceArtifact = new codepipeline.Artifact();
-        
-        // 소스 액션
         const sourceAction = new codepipeline_actions.CodeCommitSourceAction({
             actionName: 'Source',
             repository: appRepo,
@@ -34,8 +26,8 @@ export class PipelineStack extends cdk.Stack {
             version: "0.2",
             phases: {
                 install: {
-                    'runtime-versions': { 'nodejs': '16' },
-                    'commands': [ 'npm install' ]
+                    'runtime-versions': { 'nodejs': '14' },
+                    'commands': [ 'n 16', 'npm install' ]
                 },
                 build: {
                     commands: [ 
@@ -66,12 +58,6 @@ export class PipelineStack extends cdk.Stack {
         const lambdaAppBuildSpec = codebuild.BuildSpec.fromObject({
             version: "0.2",
             phases: {
-                install: {
-                    'runtime-versions': { 'nodejs': '16' }
-                },
-                build: {
-                    commands: [ 'npm build' ]
-                }
             },
             artifacts: {
                 'base-directory': 'lambda',
@@ -96,10 +82,6 @@ export class PipelineStack extends cdk.Stack {
             actionName: 'CfnDeploy',
             stackName: 'TextShareApp',
             adminPermissions: true,
-            extraInputs: [lambdaAppBuildArtifact],
-    		parameterOverrides: {
-    			...props.lambdaCode.assign(lambdaAppBuildArtifact.s3Location)
-    	    },
             templatePath: cdkBuildArtifact.atPath('TextShareStack.template.json')
         });
         
@@ -111,5 +93,5 @@ export class PipelineStack extends cdk.Stack {
                 { stageName: 'Deploy', actions: [deployAction] }
             ]
         });
-	}
+    }
 }
